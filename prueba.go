@@ -47,7 +47,7 @@ func main() {
 				//  enable ?expand query param support
 				// apis.EnrichRecord(c, app.Dao(), record)
 				return c.JSON(http.StatusOK, emprendimiento_record)
-
+				//Todo ok
 			},
 			Middlewares: []echo.MiddlewareFunc{
 				apis.ActivityLogger(app),
