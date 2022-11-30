@@ -9,6 +9,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/models"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 			Handler: func(c echo.Context) error {
 				emprendimiento_record, err := app.Dao().FindFirstRecordByData("emprendimientos", "id", c.PathParam("id"))
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay emprendimientos con ese ID.", err)
 				}
 
 				promotor_fk := emprendimiento_record.Get("id_promotor_fk").(string)
@@ -33,76 +34,67 @@ func main() {
 				cat_proyecto_fk := emprendimiento_record.Get("id_nombre_proyecto_fk").(string)
 				jornada_fk := emprendimiento_record.Get("id").(string)
 
-				// var tareajornada = map[string]interface{}{}
-				// tareajornada = make(map[string]interface{})
-
-				// var jornadalist = map[int]interface{}{}
-				// jornadalist = make(map[int]interface{})
-
+				// Sacamos los datos de la jornada con su id_emprendimientos
 				jornada, err := app.Dao().FindRecordsByExpr("jornadas", dbx.HashExp{"id_emprendimiento_fk": jornada_fk})
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay jornadas con ese ID.", err)
+				}
+				// Creamos un arreglo de tipo []*model.Record{}
+				tareajornada := []*models.Record{}
+
+				// Creamos un for para que nos almacene los diferentes ID de jornadas
+				for i := 0; i < len(jornada); i++ {
+
+					// Creamos un arreglo donde seleccione de la tabla tareas los id que agarramos con el for.
+					tareas, err := app.Dao().FindRecordsByExpr("tareas", dbx.HashExp{"id": jornada[i].Get("id_tarea_fk")})
+					if err != nil {
+						return apis.NewNotFoundError(" No hay tareas con este ID.", err)
+					}
+					tareajornada = append(tareas, tareajornada...)
 				}
 
-				tarea, err := app.Dao().FindRecordsByExpr("tareas", dbx.HashExp{"id": jornada[0].Get("id_tarea_fk")})
-				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
-				}
-				// for i := 0; i < len(jornada); i++ {
-				// 	jornada[i].Id = jornadalist[i].(map[string]interface{})["id"].(string)
-
-				// 	/*
-				// 		id_jornada, err := app.Dao().FindFirstRecordByData("jornadas", "id_emprendimiento_fk", jornadalist[i].(string))
-				// 		if err != nil {
-				// 			return apis.NewNotFoundError("The articlee does not exist.", err)
-				// 		}
-				// 		id_jornada_fk := id_jornada.Get("id_tarea_fk").(string)
-				// 	*/
-
-				// 	tareas, err := app.Dao().FindRecordsByExpr("tareas", dbx.HashExp{"id_tarea_fk": jornada[i].Id})
-				// 	if err != nil {
-				// 		return apis.NewNotFoundError("The articlee does not exist.", err)
-				// 	}
-				// 	tareajornada = make(map[string]interface{})
-
-				// 	//Aqui lo que tenemos que hacer que agarre el id de la tarea de la tabla jornada y usarlo.
-
-				// }
-
+				// Sacamos la información de los promotores usando el id.
 				promotor, err := app.Dao().FindRecordsByExpr("emi_users", dbx.HashExp{"id": promotor_fk})
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay usuarios con este ID.", err)
 				}
+				//Sacas la información de la tabla de catalogo_proyecto
 				cat_proyecto, err := app.Dao().FindRecordsByExpr("cat_proyecto", dbx.HashExp{"id": cat_proyecto_fk})
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay ningun catalogo para el proyecto.", err)
 				}
 
+				// Scas la prioridad de la tabla prioridades
 				prioridad, err := app.Dao().FindRecordsByExpr("prioridades_emp", dbx.HashExp{"id": prioridad_fk})
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay prioridades con este ID.", err)
 				}
 
+				// Sacas la fase de la tabla de fase_emprendedores.
 				fase, err := app.Dao().FindRecordsByExpr("fases_emp", dbx.HashExp{"id": fase_fk})
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay fases con este ID.", err)
 				}
 
+				// Sacas el status de la tabla status_sync
 				status, err := app.Dao().FindRecordsByExpr("status_sync", dbx.HashExp{"id": status_fk})
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay ningun status de sincronización con este ID.", err)
 				}
 
+				// Sacas la información de la tabla emprendedor
 				emprendedor, err := app.Dao().FindFirstRecordByData("emprendedores", "id", emprededor_fk)
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay ningun emprededor con este ID.", err)
 				}
 
+				// Sacas de la tabla de los emprededores el id de la comunidad.
 				comunidad_fk := emprendedor.Get("id_comunidad_fk").(string)
 
+				// Sacas la información de la tabla comunidades con su id.
 				comunidad, err := app.Dao().FindRecordsByExpr("comunidades", dbx.HashExp{"id": comunidad_fk})
 				if err != nil {
-					return apis.NewNotFoundError("The articlee does not exist.", err)
+					return apis.NewNotFoundError(" No hay ninguna comunidad con este ID.", err)
 				}
 
 				infoEmprendimiento := map[string]interface{}{
@@ -115,9 +107,10 @@ func main() {
 					"emprendedor": emprendedor,
 					"comunidad":   comunidad,
 				}
+
 				infoJornada := map[string]interface{}{
-					"jornadas": jornada,
-					"tareas":   tarea,
+					"jornadas, ": jornada,
+					"tareas":     tareajornada,
 				}
 
 				InfoTotal := map[string]interface{}{
