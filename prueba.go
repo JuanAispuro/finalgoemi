@@ -44,7 +44,6 @@ func main() {
 
 				// Creamos un for para que nos almacene los diferentes ID de jornadas
 				for i := 0; i < len(jornada); i++ {
-
 					// Creamos un arreglo donde seleccione de la tabla tareas los id que agarramos con el for.
 					tareas, err := app.Dao().FindRecordsByExpr("tareas", dbx.HashExp{"id": jornada[i].Get("id_tarea_fk")})
 					if err != nil {
@@ -72,7 +71,7 @@ func main() {
 				*/
 
 				// Consultorias
-				consulta_fk := emprendimiento_record.Get("id").(string)
+				consulta_fk := emprendimiento_record.Get("id")
 
 				consultorias, err := app.Dao().FindRecordsByExpr("consultorias", dbx.HashExp{"id_emprendimiento_fk": consulta_fk})
 				if err != nil {
@@ -86,26 +85,41 @@ func main() {
 
 				// Son 2 consultorias
 				/*
+					var i int
 					TareaConsultoria := []*models.Record{}
 
-					// Creamos un for para que nos almacene los diferentes ID de consultas-tareas
-					for i := 3; i < len(consultorias); i++ {
-						consu_fk := consultorias[i].Get("id_tarea_fk")
-						// Creamos un arreglo donde seleccione de la tabla tareas los id que agarramos con el for.
-						consul_tareas, err := app.Dao().FindRecordsByExpr("tareas", dbx.HashExp{"id": consu_fk})
+					//For para recorrer agarras las tareas.
+					for i = 0; i < len(consultorias); i++ {
+
+						TareaConsultoria = append(consultorias, TareaConsultoria...)
+						fmt.Println(consultorias[i].Get("id_tarea_fk")) //Imprime los dos
+
+						consul_fk := consultorias[i].Get("id_tarea_fk")
+						consulta, err := app.Dao().FindRecordsByExpr("tareas", dbx.HashExp{"id": consul_fk})
 						if err != nil {
-							return apis.NewNotFoundError(" No hay tareas con este ID en la tabla Consultas.", err)
+							return apis.NewNotFoundError(" No hay productos con este Id del emprendimiento.", err)
 						}
-						TareaConsultoria = append(consul_tareas, TareaConsultoria...)
+						TareaConsultoria = append(consulta, TareaConsultoria...)
+
 					}
 				*/
 				// Productos del emprendedor
 				producto_fk := emprendimiento_record.Get("id").(string)
 				productos, err := app.Dao().FindRecordsByExpr("productos_emp", dbx.HashExp{"id_emprendimiento_fk": producto_fk})
 				if err != nil {
-					return apis.NewNotFoundError(" No hay usuarios con este ID.", err)
+					return apis.NewNotFoundError(" No hay productos con este Id del emprendimiento.", err)
 				}
 
+				Productounidad := []*models.Record{}
+				// Unidad de medida se obtiene de productos
+				for i := 0; i < len(productos); i++ {
+					uni_fk := productos[i].Get("id_und_medida_fk")
+					unidad_medida, err := app.Dao().FindRecordsByExpr("und_medida", dbx.HashExp{"id": uni_fk})
+					if err != nil {
+						return apis.NewNotFoundError(" No hay unidades de medida para est producto.", err)
+					}
+					Productounidad = append(unidad_medida, Productounidad...)
+				}
 				// Agregar su imagen y unidad de medida.
 
 				// Sacamos la información de los promotores usando el id.D
@@ -177,6 +191,7 @@ func main() {
 				infoConsultoria := map[string]interface{}{
 					"consultorias": consultorias,
 					//"tarea_consultoria": TareaConsultoria,
+					"unidad de medida": Productounidad,
 				}
 
 				InfoTotal := map[string]interface{}{
